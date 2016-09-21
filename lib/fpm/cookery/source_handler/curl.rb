@@ -22,13 +22,16 @@ module FPM
 
         def extract(config = {})
           Dir.chdir(builddir) do
-            case local_path.extname
-            when '.bz2', '.gz', '.tgz', '.xz', '.tar'
+            case local_path
+            # tar and subformats: tgz, .tar.(Z, gz, xz, lz, bz2)
+            when /\.tgz$/, /\.tar(?:(\.[gxl][zZ])|(\.bz2))?$/
               safesystem('tar', 'xf', local_path)
-            when '.shar', '.bin'
+            when /\.xz/
+              safesystem('unxz', '-kf', local_path)
+            when /\.shar/, /\.bin/
               File.chmod(0755, local_path)
               safesystem(local_path)
-            when '.zip'
+            when /\.zip/
               safesystem('unzip', '-d', local_path.basename('.zip'), local_path)
             else
               if !local_path.directory? && !local_path.basename.exist?
